@@ -1,8 +1,10 @@
 const teamInput = document.querySelector("input");
 const form = document.querySelector("form");
 const teamBox = document.querySelector(".team-info");
-const games = document.querySelector(".show-games");
-games.style.display = "none";
+const games = document.createElement("button");
+const matches = document.querySelector(".matches");
+games.innerText = "Last Games";
+matches.append(games);
 
 const getInfoAboutFootballTeam = async (team) => {
   try {
@@ -56,15 +58,50 @@ form.addEventListener("submit", async (e) => {
     teamBox.append(warning);
     return;
   } else {
-    displayDetails(fetchedTeam[0]);
-    games.style.display = "block";
+    displayDetails(fetchedTeam[0]); //? Calling the team passed in the input
+
+    games.addEventListener("click", async () => {
+      const lastFiveMatches = await fetchInfoAboutLastMatches(
+        fetchedTeam[0].idTeam
+      ); //? On click, return the next 5 matches for that team based on the team's ID
+
+      if (lastFiveMatches) {
+        const lastGamesList = document.createElement("ul");
+
+        lastFiveMatches.forEach((match) => {
+          const matchToPlay = document.createElement("li");
+          matchToPlay.innerText = `Match: ${match.strEvent} - Date: ${match.dateEventLocal}`;
+          const homeTeam = document.createElement("img");
+          homeTeam.src = `${match.strHomeTeamBadge}`;
+          homeTeam.style.width = "10%";
+          const awayTeam = document.createElement("img");
+          awayTeam.src = `${match.strAwayTeamBadge}`;
+          awayTeam.style.width = "10%";
+          matchToPlay.append(homeTeam, awayTeam);
+
+          lastGamesList.append(matchToPlay);
+        });
+        matches.append(lastGamesList);
+        // console.log(lastGamesList);
+      }
+    });
   }
 
   teamInput.value = ""; //? Clearing the input
 });
 
-const fetchInfoAboutFutureMatches = async (match) => {
-  const response = await fetch(
-    `https://www.thesportsdb.com/api/v1/json/3/searchevents.php?e=${match}`
-  );
+const fetchInfoAboutLastMatches = async (teamId) => {
+  try {
+    const response = await fetch(
+      `https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id=${teamId}`
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(data);
+      return data.results;
+    }
+  } catch (error) {
+    console.log(error);
+  }
 };
