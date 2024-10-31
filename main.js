@@ -3,8 +3,6 @@ const form = document.querySelector("form");
 const teamBox = document.querySelector(".team-info");
 const games = document.createElement("button");
 const matches = document.querySelector(".matches");
-games.innerText = "Last Games";
-matches.append(games);
 
 const getInfoAboutFootballTeam = async (team) => {
   try {
@@ -29,16 +27,52 @@ const getInfoAboutFootballTeam = async (team) => {
 const displayDetails = (team) => {
   const nameOfClub = document.createElement("h2");
   const clubBadge = document.createElement("img");
+  const gamesButton = document.createElement("button");
 
   nameOfClub.innerText = `${team.strTeam}`;
   clubBadge.src = `${team.strBadge}`;
   clubBadge.style.width = "20%";
+  gamesButton.innerText = "Last Matches";
 
-  teamBox.append(nameOfClub, clubBadge);
+  teamBox.append(nameOfClub, clubBadge, gamesButton);
+
+  gamesButton.addEventListener("click", async () => {
+    matches.innerHTML = "";
+
+    const lastFiveMatches = await fetchInfoAboutLastMatches(team.idTeam); //? On click, return the next 5 matches for that team based on the team's ID
+
+    if (lastFiveMatches) {
+      const lastGamesList = document.createElement("ul");
+
+      lastFiveMatches.forEach((match) => {
+        const matchToPlay = document.createElement("li");
+        matchToPlay.innerText = `Match: ${match.strEvent} - Date: ${match.dateEventLocal}`;
+
+        const homeTeam = document.createElement("img");
+        homeTeam.src = `${match.strHomeTeamBadge}`;
+        homeTeam.style.width = "10%";
+
+        const awayTeam = document.createElement("img");
+        awayTeam.src = `${match.strAwayTeamBadge}`;
+        awayTeam.style.width = "10%";
+
+        matchToPlay.append(homeTeam, awayTeam);
+
+        lastGamesList.append(matchToPlay);
+      });
+      matches.append(lastGamesList);
+      teamInput.value = "";
+      // console.log(lastGamesList);
+    }
+  });
 };
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
+
+  //? Clear previous warning messages and results
+  teamBox.innerHTML = "";
+  matches.innerHTML = "";
 
   if (!teamInput.value) {
     const warning = document.createElement("p");
@@ -56,38 +90,9 @@ form.addEventListener("submit", async (e) => {
       teamInput.value[0].toUpperCase() + teamInput.value.slice(1)
     }, at this time.`;
     teamBox.append(warning);
-    return;
   } else {
     displayDetails(fetchedTeam[0]); //? Calling the team passed in the input
-
-    games.addEventListener("click", async () => {
-      const lastFiveMatches = await fetchInfoAboutLastMatches(
-        fetchedTeam[0].idTeam
-      ); //? On click, return the next 5 matches for that team based on the team's ID
-
-      if (lastFiveMatches) {
-        const lastGamesList = document.createElement("ul");
-
-        lastFiveMatches.forEach((match) => {
-          const matchToPlay = document.createElement("li");
-          matchToPlay.innerText = `Match: ${match.strEvent} - Date: ${match.dateEventLocal}`;
-          const homeTeam = document.createElement("img");
-          homeTeam.src = `${match.strHomeTeamBadge}`;
-          homeTeam.style.width = "10%";
-          const awayTeam = document.createElement("img");
-          awayTeam.src = `${match.strAwayTeamBadge}`;
-          awayTeam.style.width = "10%";
-          matchToPlay.append(homeTeam, awayTeam);
-
-          lastGamesList.append(matchToPlay);
-        });
-        matches.append(lastGamesList);
-        // console.log(lastGamesList);
-      }
-    });
   }
-
-  teamInput.value = ""; //? Clearing the input
 });
 
 const fetchInfoAboutLastMatches = async (teamId) => {
